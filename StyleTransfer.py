@@ -28,7 +28,7 @@ style_image = np.array(PIL.Image.open("style.jpg"))
 
 # Define the image transformations
 # Preprocesses an input image in the format expected by the VGG-19 model
-preprocess = tf.keras.applications.vgg19.preprocess_inputrain_stept
+preprocess = tf.keras.applications.vgg19.preprocess_input
 
 # Apply the transformations to the images
 content_tensor = preprocess(content_image).astype('float32')
@@ -58,16 +58,32 @@ total_loss = content_weight * content_loss + style_weight * style_loss
 # Define the optimizer
 optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
 
+
+# Define the number of training iterations
+num_iterations = 1000
+
+# Define the step size for each iteration
+step_size = 10
+
+# Define a function to clip the pixel values of the output image between 0 and 255
+def clip_0_255(image):
+    return tf.clip_by_value(image, clip_value_min=0.0, clip_value_max=255.0)
+
 # Define the training loop
-def train_step(image, style_reference, content_weight, style_weight, optimizer):
-    with tf.GradientTape() as tape:
-        # Calculate the loss
-        total_loss = content_weight * content_loss + style_weight * style_loss
+for i in range(num_iterations):
+    # Perform a single training step
+    train_step(input_tensor, vgg, optimizer, total_loss)
+    
+    # Clip the pixel values of the output image between 0 and 255
+    input_tensor.assign(clip_0_255(input_tensor))
 
-    # Calculate the gradients of the loss with respect to the image
-    gradients = tape.gradient(total_loss, image)
-
-    # Apply the gradients to the image
-    optimizer.apply_gradients([(gradients, image)])
-
-    return total_loss
+    # Print the loss every 100 iterations
+    if i % 100 == 0:
+        print("Iteration {}, Total loss: {:.4e}, Content loss: {:.4e}, Style loss: {:.4e}".format(
+            i, total_loss(input_tensor), content_loss(input_tensor), style_loss(input_tensor)))
+    
+    # Save the generated image every 100 iterations
+    if i % 100 == 0:
+        image = input_tensor.numpy().astype(np.uint8)
+        image = PIL.Image.fromarray(image)
+        image.save("output_{:04d}.jpg".format(i))
