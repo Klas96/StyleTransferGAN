@@ -26,12 +26,12 @@ style_layers = ['block1_conv1', 'block2_conv1', 'block3_conv1', 'block4_conv1', 
 content_image = np.array(PIL.Image.open("_content.png"))
 style_image = np.array(PIL.Image.open("_style.jpg"))
 
-# Define the image transformations
-preprocess = tf.keras.applications.vgg19.preprocess_input
-
 # Reshape the input images to have the expected shape
 content_image = tf.cast(tf.reshape(content_image, [1, *content_image.shape]),tf.float32)
 style_image = tf.cast(tf.reshape(style_image, [1, *style_image.shape]),tf.float32)
+
+# Define the image transformations
+preprocess = tf.keras.applications.vgg19.preprocess_input
 
 # Apply the transformations to the images
 content_tensor = preprocess(content_image)#.astype('float32')
